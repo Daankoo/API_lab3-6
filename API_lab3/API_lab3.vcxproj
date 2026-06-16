@@ -24,6 +24,7 @@
     <ProjectGuid>{1d0c53e9-eeec-4938-83a9-1da1a7ed0110}</ProjectGuid>
     <RootNamespace>APIlab3</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>API_lab3-6</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
