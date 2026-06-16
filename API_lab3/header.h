@@ -14,9 +14,9 @@ public:
     void writeBits(const uint8_t* buffer, uint32_t n);
     void close();
 private:
-    ofstream file_;
-    uint8_t buf_;
-    int bitPos_;
+    ofstream file;
+    uint8_t buf;
+    int bitPos;
 };
 
 class BitReader {
@@ -27,7 +27,7 @@ public:
     bool isEOF() const;
     void close();
 private:
-    ifstream file_;
-    uint8_t buf_;
-    int bitPos_;
+    ifstream file;
+    uint8_t buf;
+    int bitPos;
 };
