@@ -7,6 +7,8 @@
 
 using namespace std;
 
+// === lab 3 === 
+
 class BitWriter {
 public:
     BitWriter(const string& filename);
@@ -31,3 +33,5 @@ private:
     uint8_t buf;
     int bitPos;
 };
+
+// === lab 4 ===
