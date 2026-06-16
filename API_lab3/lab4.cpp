@@ -54,20 +54,59 @@ void encodeHuffman(const string& inputName, const string& outputName) {
         freq[byte]++;
 
     HuffNode* root = buildTree(freq);
-
     uint32_t codes[256] = {};
     int      lens[256] = {};
     buildCodes(root, 0, 0, codes, lens);
 
-    for (int i = 0; i < 256; i++) {
-        if (lens[i] == 0) continue;
-        cout << "byte " << i << " ('" << (char)i << "'): ";
-        for (int b = lens[i] - 1; b >= 0; b--)
-            cout << ((codes[i] >> b) & 1);
-        cout << " (len=" << lens[i] << ")\n";
+    BitWriter writer(outputName);
+
+    for (int i = 0; i < 256; i++)
+        writer.writeBits(reinterpret_cast<uint8_t*>(&freq[i]), 32);
+
+    input.clear();
+    input.seekg(0);
+    while (input.read(reinterpret_cast<char*>(&byte), 1)) {
+        uint32_t code = codes[byte];
+        int      len = lens[byte];
+        for (int b = len - 1; b >= 0; b--) {
+            uint8_t bit = (code >> b) & 1;
+            writer.writeBits(&bit, 1);
+        }
     }
+
+    writer.close();
+    cout << "Encoding complete. Result saved to " << outputName << "\n";
 }
 
 void decodeHuffman(const string& inputName, const string& outputName) {
+    BitReader reader(inputName);
 
+    uint32_t freq[256] = {};
+    for (int i = 0; i < 256; i++)
+        reader.readBits(reinterpret_cast<uint8_t*>(&freq[i]), 32);
+
+    HuffNode* root = buildTree(freq);
+    uint32_t total = 0;
+    for (int i = 0; i < 256; i++)
+        total += freq[i];
+
+    ofstream output(outputName, ios::binary);
+    if (!output) { cerr << "Error: cannot open file: " << outputName << "\n"; exit(1); }
+
+    HuffNode* node = root;
+    uint32_t decoded = 0;
+    while (decoded < total) {
+        uint8_t bit = 0;
+        reader.readBits(&bit, 1);
+        node = (bit == 0) ? node->left : node->right;
+
+        if (node->left == nullptr && node->right == nullptr) {
+            output.put(node->symbol);
+            decoded++;
+            node = root;
+        }
+    }
+
+    output.close();
+    cout << "Decoding complete. Result saved to " << outputName << "\n";
 }
