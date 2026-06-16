@@ -34,6 +34,16 @@ HuffNode* buildTree(uint32_t freq[256]) {
     return pq.top();
 }
 
+void buildCodes(HuffNode* node, uint32_t code, int len, uint32_t codes[256], int lens[256]) {
+    if (node->left == nullptr && node->right == nullptr) {
+        codes[node->symbol] = code;
+        lens[node->symbol] = len;
+        return;
+    }
+    if (node->left)  buildCodes(node->left, (code << 1) | 0, len + 1, codes, lens);
+    if (node->right) buildCodes(node->right, (code << 1) | 1, len + 1, codes, lens);
+}
+
 void encodeHuffman(const string& inputName, const string& outputName) {
     ifstream input(inputName, ios::binary);
     if (!input) { cerr << "Error: cannot open file: " << inputName << "\n"; exit(1); }
@@ -44,7 +54,18 @@ void encodeHuffman(const string& inputName, const string& outputName) {
         freq[byte]++;
 
     HuffNode* root = buildTree(freq);
-    cout << "Tree root freq: " << root->freq << "\n";
+
+    uint32_t codes[256] = {};
+    int      lens[256] = {};
+    buildCodes(root, 0, 0, codes, lens);
+
+    for (int i = 0; i < 256; i++) {
+        if (lens[i] == 0) continue;
+        cout << "byte " << i << " ('" << (char)i << "'): ";
+        for (int b = lens[i] - 1; b >= 0; b--)
+            cout << ((codes[i] >> b) & 1);
+        cout << " (len=" << lens[i] << ")\n";
+    }
 }
 
 void decodeHuffman(const string& inputName, const string& outputName) {
