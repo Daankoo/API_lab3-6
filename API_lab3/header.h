@@ -35,3 +35,13 @@ private:
 };
 
 // === lab 4 ===
+
+struct HuffNode {
+    uint8_t   symbol;
+    uint32_t  freq;
+    HuffNode* left;
+    HuffNode* right;
+};
+
+void encodeHuffman(const string& inputName, const string& outputName);
+void decodeHuffman(const string& inputName, const string& outputName);
