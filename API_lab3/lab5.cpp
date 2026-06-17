@@ -6,7 +6,6 @@ void initDict(vector<vector<uint8_t>>& dict) {
         dict.push_back({ (uint8_t)i });
 }
 
-// Лінійний пошук фрази у словнику
 int findInDict(const vector<vector<uint8_t>>& dict, const vector<uint8_t>& phrase) {
     for (int i = 0; i < (int)dict.size(); i++)
         if (dict[i] == phrase) return i;
@@ -61,5 +60,64 @@ void encodeLZW(const string& inputName, const string& outputName, int maxBits, b
 }
 
 void decodeLZW(const string& inputName, const string& outputName) {
+    BitReader reader(inputName);
 
+    // Читаємо header
+    uint8_t mb = 0, rm = 0;
+    reader.readBits(&mb, 8);
+    reader.readBits(&rm, 8);
+    int maxBits = mb;
+    bool reset = rm == 1;
+    int maxSize = 1 << maxBits;
+
+    vector<vector<uint8_t>> dict;
+    initDict(dict);
+
+    ofstream output(outputName, ios::binary);
+    if (!output) { cerr << "Error: cannot open file: " << outputName << "\n"; exit(1); }
+
+    // Читаємо перший код
+    uint32_t code = 0;
+    reader.readBits(reinterpret_cast<uint8_t*>(&code), maxBits);
+    if (reader.isEOF()) return;
+
+    vector<uint8_t> prev = dict[code];
+    for (uint8_t b : prev) output.put(b);
+
+    while (true) {
+        code = 0;
+        reader.readBits(reinterpret_cast<uint8_t*>(&code), maxBits);
+        if (reader.isEOF()) break;
+
+        vector<uint8_t> entry;
+
+        if (code < (uint32_t)dict.size()) {
+            entry = dict[code];
+        }
+        else if (code == (uint32_t)dict.size()) {
+            // Спеціальний випадок: код ще не в словнику
+            entry = prev;
+            entry.push_back(prev[0]);
+        }
+        else {
+            cerr << "Error: invalid code " << code << "\n";
+            return;
+        }
+
+        for (uint8_t b : entry) output.put(b);
+
+        // Додаємо нову фразу до словника
+        vector<uint8_t> newEntry = prev;
+        newEntry.push_back(entry[0]);
+
+        if ((int)dict.size() < maxSize)
+            dict.push_back(newEntry);
+        else if (reset)
+            initDict(dict);
+
+        prev = entry;
+    }
+
+    output.close();
+    cout << "Decoding complete. Result saved to " << outputName << "\n";
 }
