@@ -47,3 +47,8 @@ struct HuffNode {
 
 void encodeHuffman(const string& inputName, const string& outputName);
 void decodeHuffman(const string& inputName, const string& outputName);
+
+// === lab 5 ===
+
+void encodeLZW(const string& inputName, const string& outputName, int maxBits, bool reset);
+void decodeLZW(const string& inputName, const string& outputName);
