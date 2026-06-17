@@ -6,10 +6,11 @@
 #include <cstdint>
 #include <vector>
 #include <queue>
+#include <algorithm>
 
 using namespace std;
 
-// === lab 3 === 
+// === lab 3 ===
 
 class BitWriter {
 public:

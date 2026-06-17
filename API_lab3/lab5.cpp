@@ -1,24 +1,12 @@
 #include "header.h"
 
-void initDict(vector<vector<uint8_t>>& dict) {
-    dict.clear();
-    for (int i = 0; i < 256; i++)
-        dict.push_back({ (uint8_t)i });
-}
-
-int findInDict(const vector<vector<uint8_t>>& dict, const vector<uint8_t>& phrase) {
-    for (int i = 0; i < (int)dict.size(); i++)
-        if (dict[i] == phrase) return i;
-    return -1;
-}
-
 void encodeLZW(const string& inputName, const string& outputName, int maxBits, bool reset) {
     ifstream input(inputName, ios::binary);
     if (!input) { cerr << "Error: cannot open file: " << inputName << "\n"; exit(1); }
 
-    vector<vector<uint8_t>> dict;
-    initDict(dict);
     int maxSize = 1 << maxBits;
+
+    vector<vector<int>> lookup(maxSize, vector<int>(256, -1));
 
     BitWriter writer(outputName);
 
@@ -27,31 +15,37 @@ void encodeLZW(const string& inputName, const string& outputName, int maxBits, b
     writer.writeBits(&mb, 8);
     writer.writeBits(&rm, 8);
 
-    vector<uint8_t> current;
+    int dictSize = 256;
+    int current = -1;
     uint8_t byte;
 
     while (input.read(reinterpret_cast<char*>(&byte), 1)) {
-        vector<uint8_t> next = current;
-        next.push_back(byte);
+        if (current == -1) {
+            current = byte;
+            continue;
+        }
 
-        if (findInDict(dict, next) != -1) {
-            current = next;
+        if (lookup[current][byte] != -1) {
+            current = lookup[current][byte];
         }
         else {
-            uint32_t code = findInDict(dict, current);
+            uint32_t code = current;
             writer.writeBits(reinterpret_cast<uint8_t*>(&code), maxBits);
 
-            if ((int)dict.size() < maxSize)
-                dict.push_back(next);
-            else if (reset)
-                initDict(dict);
+            if (dictSize < maxSize) {
+                lookup[current][byte] = dictSize++;
+            }
+            else if (reset) {
+                for (auto& row : lookup) fill(row.begin(), row.end(), -1);
+                dictSize = 256;
+            }
 
-            current = { byte };
+            current = byte;
         }
     }
 
-    if (!current.empty()) {
-        uint32_t code = findInDict(dict, current);
+    if (current != -1) {
+        uint32_t code = current;
         writer.writeBits(reinterpret_cast<uint8_t*>(&code), maxBits);
     }
 
@@ -62,7 +56,6 @@ void encodeLZW(const string& inputName, const string& outputName, int maxBits, b
 void decodeLZW(const string& inputName, const string& outputName) {
     BitReader reader(inputName);
 
-    // Читаємо header
     uint8_t mb = 0, rm = 0;
     reader.readBits(&mb, 8);
     reader.readBits(&rm, 8);
@@ -71,12 +64,12 @@ void decodeLZW(const string& inputName, const string& outputName) {
     int maxSize = 1 << maxBits;
 
     vector<vector<uint8_t>> dict;
-    initDict(dict);
+    for (int i = 0; i < 256; i++)
+        dict.push_back({ (uint8_t)i });
 
     ofstream output(outputName, ios::binary);
     if (!output) { cerr << "Error: cannot open file: " << outputName << "\n"; exit(1); }
 
-    // Читаємо перший код
     uint32_t code = 0;
     reader.readBits(reinterpret_cast<uint8_t*>(&code), maxBits);
     if (reader.isEOF()) return;
@@ -95,7 +88,6 @@ void decodeLZW(const string& inputName, const string& outputName) {
             entry = dict[code];
         }
         else if (code == (uint32_t)dict.size()) {
-            // Спеціальний випадок: код ще не в словнику
             entry = prev;
             entry.push_back(prev[0]);
         }
@@ -106,14 +98,16 @@ void decodeLZW(const string& inputName, const string& outputName) {
 
         for (uint8_t b : entry) output.put(b);
 
-        // Додаємо нову фразу до словника
         vector<uint8_t> newEntry = prev;
         newEntry.push_back(entry[0]);
 
         if ((int)dict.size() < maxSize)
             dict.push_back(newEntry);
-        else if (reset)
-            initDict(dict);
+        else if (reset) {
+            dict.clear();
+            for (int i = 0; i < 256; i++)
+                dict.push_back({ (uint8_t)i });
+        }
 
         prev = entry;
     }
