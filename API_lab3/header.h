@@ -7,6 +7,7 @@
 #include <vector>
 #include <queue>
 #include <algorithm>
+#include <numeric>
 
 using namespace std;
 
@@ -53,3 +54,10 @@ void decodeHuffman(const string& inputName, const string& outputName);
 
 void encodeLZW(const string& inputName, const string& outputName, int maxBits, bool reset);
 void decodeLZW(const string& inputName, const string& outputName);
+
+// === lab 6 ===
+
+vector<uint8_t> bwtForward(const vector<uint8_t>& data, uint32_t& index);
+vector<uint8_t> bwtInverse(const vector<uint8_t>& data, uint32_t index);
+vector<uint8_t> mtfForward(const vector<uint8_t>& data);
+vector<uint8_t> mtfInverse(const vector<uint8_t>& data);
