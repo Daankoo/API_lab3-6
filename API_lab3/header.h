@@ -47,12 +47,12 @@ struct HuffNode {
     HuffNode* right;
 };
 
-void encodeHuffman(const string& inputName, const string& outputName);
+void encodeHuffman(const string& inputName, const string& outputName, bool useBWT = false, bool useMTF = false);
 void decodeHuffman(const string& inputName, const string& outputName);
 
 // === lab 5 ===
 
-void encodeLZW(const string& inputName, const string& outputName, int maxBits, bool reset);
+void encodeLZW(const string& inputName, const string& outputName, int maxBits, bool reset, bool useBWT = false, bool useMTF = false);
 void decodeLZW(const string& inputName, const string& outputName);
 
 // === lab 6 ===
